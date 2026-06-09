@@ -14,16 +14,21 @@ export default function Home() {
       .toUpperCase();
 
     await addDoc(collection(db, "draftRooms"), {
-      roomCode: code,
-      hostName: "Anthony",
-      status: "waiting",
-      currentPick: 1,
-      createdAt: Date.now(),
-    });
+  roomCode: code,
+  hostName: "Anthony",
+  status: "waiting",
+  currentPick: 1,
+  createdAt: Date.now(),
 
-    setRoomCode(code);
+  players: [
+    {
+      id: "host",
+      name: "Anthony",
+    },
+  ],
+});
+setRoomCode(code);
   }
-
   return (
     <main
       style={{
