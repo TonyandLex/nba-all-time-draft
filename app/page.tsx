@@ -6,6 +6,8 @@ import { db } from "../src/lib/firebase";
 
 export default function Home() {
   const [roomCode, setRoomCode] = useState("");
+  const [playerName, setPlayerName] = useState("");
+const [joinCode, setJoinCode] = useState("");
 
   async function createRoom() {
     const code = Math.random()
@@ -15,7 +17,7 @@ export default function Home() {
 
     await addDoc(collection(db, "draftRooms"), {
   roomCode: code,
-  hostName: "Anthony",
+  hostName: "playerName",
   status: "waiting",
   currentPick: 1,
   createdAt: Date.now(),
@@ -23,7 +25,7 @@ export default function Home() {
   players: [
     {
       id: "host",
-      name: "Anthony",
+      name: "playerName",
     },
   ],
 });
@@ -41,6 +43,17 @@ setRoomCode(code);
       }}
     >
       <h1>🏀 NBA All-Time Draft Simulator</h1>
+      <input
+  placeholder="Your Name"
+  value={playerName}
+  onChange={(e) => setPlayerName(e.target.value)}
+/>
+
+<input
+  placeholder="Room Code"
+  value={joinCode}
+  onChange={(e) => setJoinCode(e.target.value)}
+/>
 
       <button
         onClick={createRoom}
