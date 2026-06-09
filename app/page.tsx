@@ -22,6 +22,9 @@ export default function Home() {
   const [players, setPlayers] = useState<any[]>([]);
   const [status, setStatus] = useState("waiting");
   const [isHost, setIsHost] = useState(false);
+  const [draftOrder, setDraftOrder] = useState<any[]>([]);
+const [currentPick, setCurrentPick] = useState(1);
+const [currentRound, setCurrentRound] = useState(1);
 
   async function createRoom() {
     if (!playerName.trim()) {
@@ -105,8 +108,29 @@ export default function Home() {
     return;
   }
 
+  const shuffledPlayers = [...players];
+
+  for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [shuffledPlayers[i], shuffledPlayers[j]] = [
+      shuffledPlayers[j],
+      shuffledPlayers[i],
+    ];
+  }
+
+  const teams: Record<string, any[]> = {};
+
+  shuffledPlayers.forEach((player) => {
+    teams[player.name] = [];
+  });
+
   await updateDoc(doc(db, "draftRooms", roomId), {
     status: "drafting",
+    draftOrder: shuffledPlayers,
+    currentPick: 1,
+    currentRound: 1,
+    teams,
   });
 }
 
@@ -123,8 +147,10 @@ export default function Home() {
         if (!data) return;
 
         setPlayers(data.players || []);
-        setStatus(data.status || "waiting");
-      }
+setStatus(data.status || "waiting");
+setDraftOrder(data.draftOrder || []);
+setCurrentPick(data.currentPick || 1);
+setCurrentRound(data.currentRound || 1);
     );
 
     return () => unsubscribe();
