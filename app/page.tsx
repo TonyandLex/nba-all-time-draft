@@ -13,18 +13,24 @@ import {
 } from "firebase/firestore";
 import { db } from "../src/lib/firebase";
 
+type Player = {
+  id: string;
+  name: string;
+};
+
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [joinCode, setJoinCode] = useState("");
 
   const [roomId, setRoomId] = useState("");
-  const [players, setPlayers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [status, setStatus] = useState("waiting");
   const [isHost, setIsHost] = useState(false);
-  const [draftOrder, setDraftOrder] = useState<any[]>([]);
-const [currentPick, setCurrentPick] = useState(1);
-const [currentRound, setCurrentRound] = useState(1);
+
+  const [draftOrder, setDraftOrder] = useState<Player[]>([]);
+  const [currentPick, setCurrentPick] = useState(1);
+  const [currentRound, setCurrentRound] = useState(1);
 
   async function createRoom() {
     if (!playerName.trim()) {
@@ -42,6 +48,7 @@ const [currentRound, setCurrentRound] = useState(1);
       hostName: playerName,
       status: "waiting",
       currentPick: 1,
+      currentRound: 1,
       createdAt: Date.now(),
 
       players: [
@@ -103,58 +110,64 @@ const [currentRound, setCurrentRound] = useState(1);
   }
 
   async function startDraft() {
-  if (players.length < 2) {
-    alert("At least 2 players are required to start the draft.");
-    return;
+    if (players.length < 2) {
+      alert("At least 2 players are required to start the draft.");
+      return;
+    }
+
+    const shuffledPlayers = [...players];
+
+    for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+
+      [shuffledPlayers[i], shuffledPlayers[j]] = [
+        shuffledPlayers[j],
+        shuffledPlayers[i],
+      ];
+    }
+
+    const teams: Record<string, any[]> = {};
+
+    shuffledPlayers.forEach((player) => {
+      teams[player.name] = [];
+    });
+
+    await updateDoc(doc(db, "draftRooms", roomId), {
+      status: "drafting",
+      draftOrder: shuffledPlayers,
+      currentPick: 1,
+      currentRound: 1,
+      teams,
+    });
   }
 
-  const shuffledPlayers = [...players];
+useEffect(() => {
+  if (!roomId) return;
 
-  for (let i = shuffledPlayers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+  const unsubscribe = onSnapshot(
+    doc(db, "draftRooms", roomId),
+    (snapshot) => {
+      const data = snapshot.data();
 
-    [shuffledPlayers[i], shuffledPlayers[j]] = [
-      shuffledPlayers[j],
-      shuffledPlayers[i],
-    ];
-  }
+      if (!data) {
+        return;
+      }
 
-  const teams: Record<string, any[]> = {};
+      setPlayers(data.players || []);
+      setStatus(data.status || "waiting");
+      setDraftOrder(data.draftOrder || []);
+      setCurrentPick(data.currentPick || 1);
+      setCurrentRound(data.currentRound || 1);
+    }
+  );
 
-  shuffledPlayers.forEach((player) => {
-    teams[player.name] = [];
-  });
+  return () => unsubscribe();
+}, [roomId]);
 
-  await updateDoc(doc(db, "draftRooms", roomId), {
-    status: "drafting",
-    draftOrder: shuffledPlayers,
-    currentPick: 1,
-    currentRound: 1,
-    teams,
-  });
-}
-
-  useEffect(() => {
-    if (!roomId) return;
-
-    const unsubscribe = onSnapshot(
-      doc(db, "draftRooms", roomId),
-      (snapshot) => {
-        const data = snapshot.data();
-
-        console.log("ROOM UPDATE", data);
-
-        if (!data) return;
-
-        setPlayers(data.players || []);
-setStatus(data.status || "waiting");
-setDraftOrder(data.draftOrder || []);
-setCurrentPick(data.currentPick || 1);
-setCurrentRound(data.currentRound || 1);
-    );
-
-    return () => unsubscribe();
-  }, [roomId]);
+  const currentPlayerOnClock =
+    draftOrder.length > 0
+      ? draftOrder[(currentPick - 1) % draftOrder.length]
+      : null;
 
   return (
     <main
@@ -217,6 +230,31 @@ setCurrentRound(data.currentRound || 1);
               <li key={player.id}>{player.name}</li>
             ))}
           </ul>
+
+          {status === "drafting" && (
+            <>
+              <h2>Draft Started</h2>
+
+              <h3>
+                Round {currentRound} - Pick {currentPick}
+              </h3>
+
+              <h3>
+                On The Clock:{" "}
+                {currentPlayerOnClock
+                  ? currentPlayerOnClock.name
+                  : "Waiting..."}
+              </h3>
+
+              <h2>Draft Order</h2>
+
+              <ol>
+                {draftOrder.map((player) => (
+                  <li key={player.id}>{player.name}</li>
+                ))}
+              </ol>
+            </>
+          )}
 
           {isHost && status === "waiting" && (
             <button
