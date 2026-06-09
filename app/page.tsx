@@ -100,10 +100,15 @@ export default function Home() {
   }
 
   async function startDraft() {
-    await updateDoc(doc(db, "draftRooms", roomId), {
-      status: "drafting",
-    });
+  if (players.length < 2) {
+    alert("At least 2 players are required to start the draft.");
+    return;
   }
+
+  await updateDoc(doc(db, "draftRooms", roomId), {
+    status: "drafting",
+  });
+}
 
   useEffect(() => {
     if (!roomId) return;
