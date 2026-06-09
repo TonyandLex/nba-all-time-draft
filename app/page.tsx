@@ -25,7 +25,7 @@ const [joinCode, setJoinCode] = useState("");
 
     await addDoc(collection(db, "draftRooms"), {
   roomCode: code,
-  hostName: "playerName",
+  hostName: playerName,
   status: "waiting",
   currentPick: 1,
   createdAt: Date.now(),
@@ -33,7 +33,7 @@ const [joinCode, setJoinCode] = useState("");
   players: [
     {
       id: "host",
-      name: "playerName",
+      name: playerName,
     },
   ],
 });
