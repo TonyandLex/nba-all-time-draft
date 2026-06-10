@@ -32,6 +32,7 @@ export default function Home() {
   const [draftOrder, setDraftOrder] = useState<Player[]>([]);
   const [currentPick, setCurrentPick] = useState(1);
   const [currentRound, setCurrentRound] = useState(1);
+  const [draftedPlayers, setDraftedPlayers] = useState<any[]>([]);
 
   async function createRoom() {
     if (!playerName.trim()) {
@@ -115,6 +116,7 @@ export default function Home() {
       alert("At least 2 players are required to start the draft.");
       return;
     }
+ 
 
     const shuffledPlayers = [...players];
 
@@ -141,7 +143,14 @@ export default function Home() {
       teams,
     });
   }
+ async function draftPlayer(player: any) {
+  if (!roomId) return;
 
+  await updateDoc(doc(db, "draftRooms", roomId), {
+    draftedPlayers: [...draftedPlayers, player],
+    currentPick: currentPick + 1,
+  });
+}
 useEffect(() => {
   if (!roomId) return;
 
@@ -161,6 +170,7 @@ useEffect(() => {
       setDraftOrder(data.draftOrder || []);
       setCurrentPick(data.currentPick || 1);
       setCurrentRound(data.currentRound || 1);
+      setDraftedPlayers(data.draftedPlayers || []);
     }
   );
 
@@ -171,6 +181,13 @@ useEffect(() => {
     draftOrder.length > 0
       ? draftOrder[(currentPick - 1) % draftOrder.length]
       : null;
+  
+      const availablePlayers = nbaPlayers.filter(
+  (player) =>
+    !draftedPlayers.some(
+      (drafted) => drafted.id === player.id
+    )
+);
 
   return (
     <main
@@ -259,9 +276,16 @@ useEffect(() => {
               <h2>Available NBA Players</h2>
 
 <ul>
-  {nbaPlayers.map((player) => (
+  {availablePlayers.map((player) => (
     <li key={player.id}>
       {player.name} ({player.position})
+
+      <button
+        onClick={() => draftPlayer(player)}
+        style={{ marginLeft: "10px" }}
+      >
+        Draft
+      </button>
     </li>
   ))}
 </ul>
