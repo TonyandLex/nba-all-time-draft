@@ -12,6 +12,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "../src/lib/firebase";
+import { nbaPlayers } from "./data/players";
 
 type Player = {
   id: string;
@@ -149,6 +150,8 @@ useEffect(() => {
     (snapshot) => {
       const data = snapshot.data();
 
+      console.log("Firestore update:", data);
+
       if (!data) {
         return;
       }
@@ -253,6 +256,15 @@ useEffect(() => {
                   <li key={player.id}>{player.name}</li>
                 ))}
               </ol>
+              <h2>Available NBA Players</h2>
+
+<ul>
+  {nbaPlayers.map((player) => (
+    <li key={player.id}>
+      {player.name} ({player.position})
+    </li>
+  ))}
+</ul>
             </>
           )}
 
